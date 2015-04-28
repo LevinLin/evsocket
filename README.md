@@ -6,15 +6,15 @@
 
 [USAGE]
     [.INSTALATION]
-        [.1]install libevent
-        [.2]./configure --with-libevent=/path/to/libevent/install/dir
-        [.3]make
-        [.4]make install
-        [.5]/usr/local/bin/memcached -u root
+        [..1]install libevent
+        [..2]./configure --with-libevent=/path/to/libevent/install/dir
+        [..3]make
+        [..4]make install
+        [..5]/usr/local/bin/memcached -u root
     [.TEST WEBSOCK HANDSHAKE]
-        [.6]open another terminal window
-        [.7]connect server with websocket handshake header by client(written in PHP or anything you like)
-        [.8]chek and enjoy it
+        [..6]open another terminal window
+        [..7]connect server with websocket handshake header by client(written in PHP or anything you like)
+        [..8]chek and enjoy it
         
 [FUNTION]
     [.DONE]
