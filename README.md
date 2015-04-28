@@ -1,20 +1,21 @@
-# Memcached
+# a C10K server taking advantage of memcached's network library and websocket protocol
+# 一个由memcached的网络库和websocket协议构成的长连接服务器
 
-## Levin Add websoket support
+## Levin Add websoket support to memcached
 * vllm@163.com
 
 [USAGE]
     [.INSTALATION]
-    	[.1]install libevent
-    	[.2]./configure --with-libevent=/path/to/libevent/install/dir
-    	[.3]make
-    	[.4]make install
-    	[.5]/usr/local/bin/memcached -u root
+        [.1]install libevent
+        [.2]./configure --with-libevent=/path/to/libevent/install/dir
+        [.3]make
+        [.4]make install
+        [.5]/usr/local/bin/memcached -u root
     [.TEST WEBSOCK HANDSHAKE]
-    	[.6]open another terminal window
-    	[.7]connect server with websocket handshake header by client(written in PHP or anything you like)
-    	[.8]chek and enjoy it
-
+        [.6]open another terminal window
+        [.7]connect server with websocket handshake header by client(written in PHP or anything you like)
+        [.8]chek and enjoy it
+        
 [FUNTION]
     [.DONE]
         [..1]support websoket handshake
@@ -38,16 +39,6 @@ epoll isn't in Linux 2.4, but there's a backport at:
     http://www.xmailserver.org/linux-patches/nio-improve.html
 
 You want the epoll-lt patch (level-triggered).
-
-### Mac OS X
-
-If you're using MacOS, you'll want libevent 1.1 or higher to deal with
-a kqueue bug.
-
-Also, be warned that the -k (mlockall) option to memcached might be
-dangerous when using a large cache.  Just make sure the memcached machines
-don't swap.  memcached does non-blocking network I/O, but not disk.  (it
-should never go to disk, or you've lost the whole point of it)
 
 ## Website
 
