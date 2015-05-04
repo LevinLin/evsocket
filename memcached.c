@@ -593,6 +593,7 @@ static void conn_close(conn *c) {
     stats.curr_conns--;
     STATS_UNLOCK();
 
+    printf("conn is closed\n");
     return;
 }
 
@@ -4075,16 +4076,18 @@ enum try_websock_handshake websock_handshake(conn *c){
     const char *websocket_magic_key = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     char auth[256];
 
-    char *p, *q;
-    p = strstr(c->rcurr, "Sec-WebSocket-Version: 13\r\n\r\n");
-    if (p == NULL) {
-        printf("check Sec-WebSocket-Version: 13\\r\\n\\r\\n failed\n");
-        return handshake_invalid;
+    char *p, *q, *r, *s;
+    r = strstr(c->rcurr, "Sec-WebSocket-Version: ");
+    s = memchr(r, '\n', 30);
+    if(!s){
+	return handshake_invalid;
     }
-    int len = strlen("Sec-WebSocket-Version: 13\r\n\r\n");
-    assert(p <= (c->rcurr + c->rbytes));
-    int processed_bytes = p - c->rcurr + len;
+    if(*(s-1) != '\r' || *(s+1) != '\r' || *(s+2) != '\n'){
+    	return handshake_invalid;
+    }
+    int processed_bytes = s - c->rcurr + 1 + 2;
 
+    printf("sfd:%d\n",c->sfd);
     p = strstr(c->rcurr, sec_websocket_key);
     if (p == NULL) {
         p = strstr(c->rcurr, sec_websocket_key_low);
@@ -4121,9 +4124,16 @@ enum try_websock_handshake websock_handshake(conn *c){
 	return handshake_fail;
     }
 
-    //p = strstr(c->rcurr, "\r\n\r\n");
-    c->rbytes -= processed_bytes;
     c->rcurr = c->rcurr+processed_bytes;
+    c->rbytes -= processed_bytes;
+
+    if (c->rcurr != c->rbuf) {
+        if (processed_bytes != 0) /* otherwise there's nothing to copy */
+            memmove(c->rbuf, c->rcurr, processed_bytes);
+        c->rcurr = c->rbuf;
+    }
+
+    //printf("c->rbytes:%d\nc->rcurr:%s\n",c->rbytes,c->rcurr);
     c->msgcurr = 0;
     c->msgused = 0;
     c->iovused = 0;
@@ -4295,9 +4305,12 @@ static void drive_machine(conn *c) {
     	    }
 
         case conn_websock_parse_head :
+            printf("state:conn_websock_parse_head\n");
+            conn_set_state(c, conn_closing);
             break;
 
         case conn_websock_parse_body :
+            conn_set_state(c, conn_closing);
             break;
 
         case conn_new_cmd:
@@ -4468,13 +4481,12 @@ static void drive_machine(conn *c) {
             conn_set_state(c, conn_closing);
             break;
           }
-            printf("c->wbuf:\n%s",c->wbuf);
+            //printf("c->wbuf:\n%s",c->wbuf);
             switch (transmit(c)) {
             case TRANSMIT_COMPLETE:
                 if (c->state == conn_mwrite) {
                     conn_release_items(c);
-                    /* XXX:  I don't know why this wasn't the general case */
-                    if(c->protocol == binary_prot) {
+                    if(c->write_and_go == conn_websock_parse_head) {
                         conn_set_state(c, c->write_and_go);
                     } else {
                         conn_set_state(c, conn_new_cmd);
@@ -4512,6 +4524,7 @@ static void drive_machine(conn *c) {
 
         case conn_closed:
             /* This only happens if dormando is an idiot. */
+            printf("websocket closed\n");
             abort();
             break;
 
